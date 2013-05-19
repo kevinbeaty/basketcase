@@ -1,0 +1,6 @@
+--require ./test/common.js
+--no-colors
+--ui bdd
+--reporter spec
+./test/basic.js
+./test/unapply.js

@@ -1,0 +1,32 @@
+{
+  "name": "basketcase",
+  "version": "0.0.1",
+  "description": "JavaScript pattern matching",
+  "main": "basketcase.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevinbeaty/basketcase.git"
+  },
+  "keywords": [
+    "match",
+    "matcher",
+    "extractor",
+    "pattern",
+    "case class",
+    "case",
+    "predicate"
+  ],
+  "author": "Kevin Beaty",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "~1.2.1"
+  },
+  "devDependencies": {
+    "uglify-js": "~2.3.5",
+    "mocha": "~1.9.0",
+    "browserify": "~2.14.1"
+  }
+}
