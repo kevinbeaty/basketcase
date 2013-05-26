@@ -75,7 +75,7 @@ var pred = match.predicates,
     eq(fn(oldBob, oldFred), 'fred is old, but younger than bob');
   });
 
-  it('should match pair predicates', function(){
+  it('should match pairs', function(){
     var fn = match(
       guard(_.isArray, _.isObject)(function(pair, options){
         if(options.reverse){

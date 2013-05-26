@@ -10,25 +10,9 @@ _.extend(exports, {
   _:_,
   predicates:predicates,
   imply:imply,
-  guard:guard
+  guard:guard,
+  otherwise:guard(predicates.always)
 });
-
-_.each(['truthy', 'falsey', 'always', 'never'], function(name){
-  exports[name] = guard(predicates[name]);
-});
-
-_.each(['and', 'or', 'not', 'equal', 'where', 'instanceOf'], function(name){
-  exports[name] = guardArgs(predicates[name]);
-});
-
-_.each(['isArguments', 'isArray', 'isBoolean', 'isDate',
-  'isElement', 'isEmpty', 'isFinite', 'isFunction', 'isNaN',
-  'isNull', 'isNumber', 'isObject', 'isPlainObject', 'isRegExp',
-  'isString', 'isUndefined' ], function(name){
-  exports[name] = guard(_[name]);
-});
-
-exports.otherwise = exports.always;
 
 function match() {
   var fns = _.map(arguments, toFunction),
@@ -77,12 +61,6 @@ function predicateArgs(ps, args){
   }
 
   return true;
-}
-
-function guardArgs(p){
-  return function(){
-    return guard(p.apply(null, arguments));
-  };
 }
 
 function toFunction(fn){

@@ -1,9 +1,11 @@
 'use strict';
 /*globals describe, it, match, eq*/
 var imply = match.imply,
-    instanceOf = match.instanceOf,
+    guard = match.guard,
+    pred = match.predicates,
+    instanceOf = pred.instanceOf,
     otherwise = match.otherwise,
-    where = match.where,
+    where = pred.where,
     _ = match._;
 
 describe('unapply List', function(){
@@ -25,7 +27,7 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) NonEmpty, 0', function(){
     var fn =
       imply(List)(
-        instanceOf(NonEmpty)(function(head, tail){
+        guard(instanceOf(NonEmpty))(function(head, tail){
           return head + fn(tail);
         }), 0);
 
@@ -35,8 +37,8 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) Empty, NonEmpty', function(){
     var fn =
       imply(List)(
-        instanceOf(Empty)(0),
-        instanceOf(NonEmpty)(function(head, tail){
+        guard(instanceOf(Empty))(0),
+        guard(instanceOf(NonEmpty))(function(head, tail){
           return head + fn(tail);
         }));
 
@@ -46,7 +48,7 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) Empty, always', function(){
     var fn =
       imply(List)(
-        instanceOf(Empty)(0),
+        guard(instanceOf(Empty))(0),
         otherwise(function(head, tail){
           return head + fn(tail);
         }));
@@ -83,11 +85,11 @@ describe('unapply Term obj', function(){
   };
 
   var termString = match(
-      instanceOf(Var)(),
-      instanceOf(Fun)(function(x, b){
+      guard(instanceOf(Var))(),
+      guard(instanceOf(Fun))(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
-      instanceOf(App)(function(f, v){
+      guard(instanceOf(App))(function(f, v){
         return '('+termString(f)+' '+termString(v)+')';
       }));
 
@@ -127,10 +129,10 @@ describe('unapply Term func', function(){
   };
 
   var termString = match(
-      where({type:'Fun'})(function(x, b){
+      guard(where({type:'Fun'}))(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
-      where({type:'App'})(function(f, v){
+      guard(where({type:'App'}))(function(f, v){
         return '('+termString(f)+' '+termString(v)+')';
       }),
       otherwise());
@@ -159,7 +161,7 @@ describe('unapply DivBy2 obj', function(){
   };
 
   it('should unapply DivBy2 instanceOf, 0', function(){
-    var divBy2 = imply(DivBy2)(instanceOf(DivBy2)(), 0);
+    var divBy2 = imply(DivBy2)(guard(instanceOf(DivBy2))(), 0);
     eq(divBy2(2), 1);
     eq(divBy2(4), 2);
     eq(divBy2(-5), 0);
