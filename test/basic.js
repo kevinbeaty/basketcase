@@ -4,6 +4,7 @@
 describe('primitives', function(){
 var pred = match.predicates,
     guard = match.guard,
+    otherwise = match.otherwise,
     _ = match._,
     add = function(a){return function(m){return m+a;};};
 
@@ -24,13 +25,16 @@ var pred = match.predicates,
         if(m % 2 === 0){
           return 'even';
         }
-      });
+      },
+      otherwise(function(){
+        return 'odd';
+      }));
 
-    eq(fn(1), 1);
+    eq(fn(1), 'odd');
     eq(fn(0), 'even');
     eq(fn(2), 'even');
     eq(fn(-2), 'even');
-    eq(fn(-1), -1);
+    eq(fn(-1), 'odd');
   });
 
   it('should match truthy', function(){
@@ -142,7 +146,8 @@ var pred = match.predicates,
       fn = match(
         where({name:'bob'})(),
         where({age:90})(appendName(' is old')),
-        where({name:'fred'})(appendName('?')));
+        where({name:'fred'})(appendName('?')),
+        otherwise());
 
     eq(fn({name:'bob', age:90}), {name: 'bob', age:90});
     eq(fn({name:'fred', age:90}), {name: 'fred is old', age:90});

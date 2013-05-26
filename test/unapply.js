@@ -1,9 +1,8 @@
 'use strict';
 /*globals describe, it, match, eq*/
-var pred = match.predicates,
-    imply = match.imply,
+var imply = match.imply,
     instanceOf = match.instanceOf,
-    always = match.always,
+    otherwise = match.otherwise,
     where = match.where,
     _ = match._;
 
@@ -48,7 +47,7 @@ describe('unapply List', function(){
     var fn =
       imply(List)(
         instanceOf(Empty)(0),
-        always(function(head, tail){
+        otherwise(function(head, tail){
           return head + fn(tail);
         }));
 
@@ -133,7 +132,8 @@ describe('unapply Term func', function(){
       }),
       where({type:'App'})(function(f, v){
         return '('+termString(f)+' '+termString(v)+')';
-      }));
+      }),
+      otherwise());
 
   it('should print id = ^x.x', function(){
     var id = Fun('x', Var('x'));
@@ -166,7 +166,7 @@ describe('unapply DivBy2 obj', function(){
   });
 
   it('should unapply DivBy2 always, false', function(){
-    var divBy2 = imply(DivBy2)(always(), false);
+    var divBy2 = imply(DivBy2)(otherwise(), false);
     eq(divBy2(2), 1);
     eq(divBy2(4), 2);
     eq(divBy2(-5), false);
@@ -177,14 +177,14 @@ describe('unapply DivBy2 func', function(){
   var DivBy2 = function(x){ return x/2; };
 
   it('should unapply DivBy2 identity', function(){
-    var divBy2 = imply(DivBy2)();
+    var divBy2 = imply(DivBy2)(otherwise());
     eq(divBy2(2), 1);
     eq(divBy2(4), 2);
     eq(divBy2(-5), -2.5);
   });
 
   it('should unapply DivBy2 always', function(){
-    var divBy2 = imply(DivBy2)(always());
+    var divBy2 = imply(DivBy2)(otherwise());
     eq(divBy2(2), 1);
     eq(divBy2(4), 2);
     eq(divBy2(-5), -2.5);

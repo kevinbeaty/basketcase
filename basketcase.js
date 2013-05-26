@@ -1,7 +1,8 @@
 'use strict';
 
 var _ = require('lodash'),
-    predicates = require('./lib/predicates');
+    predicates = require('./lib/predicates'),
+    slice = Array.prototype.slice;
 
 module.exports = exports = match;
 
@@ -27,20 +28,20 @@ _.each(['isArguments', 'isArray', 'isBoolean', 'isDate',
   exports[name] = guard(_[name]);
 });
 
-var applyUnapplyIdentity = applyUnapply(_.identity);
+exports.otherwise = exports.always;
 
 function match() {
-  var fns = _.map(arguments, toFunction);
+  var fns = _.map(arguments, toFunction),
+      len = fns.length;
   return function(value){
-    var matched, fn, i = 0, len = fns.length;
+    var matched, fn, i = 0;
     for(; i<len; ++i){
-      matched = fns[i].call(value, value);
+      matched = fns[i].apply(value, arguments);
       if(!_.isUndefined(matched)){
         return matched;
       }
     }
-    matched = applyUnapplyIdentity(value);
-    return _.isUndefined(matched) ? value : matched;
+    throw new TypeError('match non exhaustive for '+slice.call(arguments));
   };
 }
 
@@ -49,20 +50,33 @@ function imply(fn){
   return function(){
     var matched = match.apply(null, arguments);
     return function(value){
-      return matched(fn(value));
+      return matched(fn.apply(value, arguments));
     };
   };
 }
 
-function guard(p){
+function guard(){
+  var ps = arguments;
   return function(fn){
     fn = applyUnapply(fn);
     return function(value){
-      if(!!p(value)){
-        return fn(value);
+      var args = arguments;
+      if(predicateArgs(ps, args)){
+        return fn.apply(value, args);
       }
     };
   };
+}
+
+function predicateArgs(ps, args){
+  var i=0, len = ps.length;
+  for(; i<len; ++i){
+    if(!ps[i](args[i])){
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function guardArgs(p){
@@ -90,9 +104,14 @@ function applyUnapply(fn){
   return function(value){
     var unapplied = unapply(value);
     if(!_.isUndefined(unapplied)){
-      return fn.apply(value, unapplied);
+      return fn.apply(value, unapplied.concat(slice.call(arguments, 1)));
     }
   };
+}
+
+var _applyUnapplyIdentity = applyUnapply(_.identity);
+function applyUnapplyIdentity(value){
+  return _applyUnapplyIdentity.apply(value, arguments);
 }
 
 function applyUnapplyConstantly(value){

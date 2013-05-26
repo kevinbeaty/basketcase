@@ -3,4 +3,5 @@
 --ui bdd
 --reporter spec
 ./test/basic.js
+./test/guardmulti.js
 ./test/unapply.js
