@@ -27,23 +27,25 @@ _.each(['isArguments', 'isArray', 'isBoolean', 'isDate',
   exports[name] = guard(_[name]);
 });
 
+var applyUnapplyIdentity = applyUnapply(_.identity);
+
 function match() {
   var fns = _.map(arguments, toFunction);
   return function(value){
     var matched, fn, i = 0, len = fns.length;
     for(; i<len; ++i){
-      matched = fns[i](value);
+      matched = fns[i].call(value, value);
       if(!_.isUndefined(matched)){
         return matched;
       }
     }
-    matched = applyUnapply(_.identity, value);
+    matched = applyUnapplyIdentity(value);
     return _.isUndefined(matched) ? value : matched;
   };
 }
 
 function imply(fn){
-  fn = toFunction(fn);
+  fn = applyUnapply(fn);
   return function(){
     var matched = match.apply(null, arguments);
     return function(value){
@@ -54,10 +56,10 @@ function imply(fn){
 
 function guard(p){
   return function(fn){
-    fn = toFunction(fn);
+    fn = applyUnapply(fn);
     return function(value){
       if(!!p(value)){
-        return applyUnapply(fn, value);
+        return fn(value);
       }
     };
   };
@@ -70,25 +72,31 @@ function guardArgs(p){
 }
 
 function toFunction(fn){
-  fn = asFunction(fn);
-  return function(){
-    return fn.apply(null, arguments);
-  };
+ var f = _.isFunction(fn) ? fn :
+    _.isUndefined(fn) ? applyUnapplyIdentity :
+    applyUnapplyConstantly(fn);
+ return f;
 }
 
-function asFunction(fn){
-  return _.isFunction(fn) ? fn :
-    _.isUndefined(fn) ? _.identity :
-    function(){return fn;};
-}
-
-function applyUnapply(fn, value){
+function unapply(value){
   if(value && _.isFunction(value.unapply)){
-    var unapplied = value.unapply.call(value, value);
+    return value.unapply.call(value, value);
+  }
+  return [value];
+}
+
+function applyUnapply(fn){
+  fn = toFunction(fn);
+  return function(value){
+    var unapplied = unapply(value);
     if(!_.isUndefined(unapplied)){
       return fn.apply(value, unapplied);
     }
-  } else {
-    return fn(value);
-  }
+  };
+}
+
+function applyUnapplyConstantly(value){
+  return function(){
+    return applyUnapplyIdentity(value);
+  };
 }
