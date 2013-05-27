@@ -4,4 +4,5 @@
 --reporter spec
 ./test/basic.js
 ./test/guardmulti.js
+./test/multimethod.js
 ./test/unapply.js

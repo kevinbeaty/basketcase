@@ -5,12 +5,12 @@ var _ = require('lodash'),
     slice = Array.prototype.slice;
 
 module.exports = exports = match;
-
 _.extend(exports, {
   _:_,
   predicates:predicates,
   imply:imply,
   guard:guard,
+  method:method,
   otherwise:guard(predicates.always)
 });
 
@@ -50,6 +50,13 @@ function guard(){
       }
     };
   };
+}
+
+function method(){
+  var ps = _.map(arguments, function(t){
+    return predicates.isA(t);
+  });
+  return guard.apply(null, ps);
 }
 
 function predicateArgs(ps, args){
