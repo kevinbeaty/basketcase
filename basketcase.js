@@ -77,6 +77,16 @@ function toFunction(fn){
  return f;
 }
 
+function applyUnapply(fn){
+  fn = toFunction(fn);
+  return function(value){
+    var unapplied = unapply.apply(null, arguments);
+    if(!_.isUndefined(unapplied)){
+      return fn.apply(value, unapplied);
+    }
+  };
+}
+
 function unapply(){
   var args = _.map(arguments, function(value){
     if(value && _.isFunction(value.unapply)){
@@ -88,17 +98,6 @@ function unapply(){
   if(args.length){
     return _.flatten(args, true);
   }
-}
-
-function applyUnapply(fn){
-  fn = toFunction(fn);
-  return function(value){
-    var args = arguments,
-      unapplied = unapply.apply(null, args);
-    if(!_.isUndefined(unapplied)){
-      return fn.apply(value, unapplied.concat(slice.call(args, 1)));
-    }
-  };
 }
 
 var _applyUnapplyIdentity = applyUnapply(_.identity);

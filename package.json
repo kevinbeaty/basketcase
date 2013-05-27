@@ -1,7 +1,7 @@
 {
   "name": "basketcase",
   "version": "0.0.2",
-  "description": "JavaScript pattern matching",
+  "description": "JavaScript pattern matching and multi methods",
   "main": "basketcase.js",
   "scripts": {
     "test": "mocha"
@@ -17,7 +17,13 @@
     "pattern",
     "case class",
     "case",
-    "predicate"
+    "predicate",
+    "method",
+    "multimethod",
+    "defmulti",
+    "defmethod",
+    "dispatch",
+    "overload"
   ],
   "author": "Kevin Beaty",
   "license": "MIT",
