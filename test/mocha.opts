@@ -6,3 +6,4 @@
 ./test/guardmulti.js
 ./test/multimethod.js
 ./test/unapply.js
+./test/caseclass.js

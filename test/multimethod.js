@@ -6,7 +6,12 @@ var method = match.method,
     instanceOf = pred.instanceOf,
     prototypeOf = pred.prototypeOf,
     isA = pred.isA,
-    _ = match._;
+    _ = match._,
+    create = Object.create || function(o){
+      function F(){}
+      F.prototype = o;
+      return new F();
+    };
 
 function rockRock(a1, a2){
   return 'Asteroids collide!'+a1.crash() + a2.crash();
@@ -83,58 +88,55 @@ describe('Asteroid/Spaceship instanceOf', function(){
 
 });
 
-if(_.isFunction(Object.create)){
-  describe('Asteroid/Spaceship prototypeOf', function(){
-    var Asteroid = {
-      crash: function(){
-        return " Boom! "+this.id;
-      }
-    };
-
-    var Spaceship = {
-      crash: function(){
-        return " Bang! "+this.id;
-      }
-    };
-
-    function rock(id){
-      var obj = Object.create(Asteroid);
-      obj.id = id;
-      return obj;
+describe('Asteroid/Spaceship prototypeOf', function(){
+  var Asteroid = {
+    crash: function(){
+      return " Boom! "+this.id;
     }
+  };
 
-    function ship(id){
-      var obj = Object.create(Spaceship);
-      obj.id = id;
-      return obj;
+  var Spaceship = {
+    crash: function(){
+      return " Bang! "+this.id;
     }
+  };
 
-    it('should overload crash guard method', function(){
-      var crash = match(
-          method(Asteroid, Asteroid)(rockRock),
-          method(Spaceship, Spaceship)(shipShip),
-          method(Asteroid, Spaceship)(rockShip),
-          method(Spaceship, Asteroid)(shipRock));
-      testCrash(crash, rock, ship);
-    });
+  function rock(id){
+    var obj = create(Asteroid);
+    obj.id = id;
+    return obj;
+  }
 
-    it('should overload crash guard isA', function(){
-      var crash = match(
-          guard(isA(Asteroid), isA(Asteroid))(rockRock),
-          guard(isA(Spaceship), isA(Spaceship))(shipShip),
-          guard(isA(Asteroid), isA(Spaceship))(rockShip),
-          guard(isA(Spaceship), isA(Asteroid))(shipRock));
-      testCrash(crash, rock, ship);
-    });
+  function ship(id){
+    var obj = create(Spaceship);
+    obj.id = id;
+    return obj;
+  }
 
-    it('should overload crash guard prototypeOf', function(){
-      var crash = match(
-          guard(prototypeOf(Asteroid), prototypeOf(Asteroid))(rockRock),
-          guard(prototypeOf(Spaceship), prototypeOf(Spaceship))(shipShip),
-          guard(prototypeOf(Asteroid), prototypeOf(Spaceship))(rockShip),
-          guard(prototypeOf(Spaceship), prototypeOf(Asteroid))(shipRock));
-      testCrash(crash, rock, ship);
-    });
-
+  it('should overload crash guard method', function(){
+    var crash = match(
+        method(Asteroid, Asteroid)(rockRock),
+        method(Spaceship, Spaceship)(shipShip),
+        method(Asteroid, Spaceship)(rockShip),
+        method(Spaceship, Asteroid)(shipRock));
+    testCrash(crash, rock, ship);
   });
-}
+
+  it('should overload crash guard isA', function(){
+    var crash = match(
+        guard(isA(Asteroid), isA(Asteroid))(rockRock),
+        guard(isA(Spaceship), isA(Spaceship))(shipShip),
+        guard(isA(Asteroid), isA(Spaceship))(rockShip),
+        guard(isA(Spaceship), isA(Asteroid))(shipRock));
+    testCrash(crash, rock, ship);
+  });
+
+  it('should overload crash guard prototypeOf', function(){
+    var crash = match(
+        guard(prototypeOf(Asteroid), prototypeOf(Asteroid))(rockRock),
+        guard(prototypeOf(Spaceship), prototypeOf(Spaceship))(shipShip),
+        guard(prototypeOf(Asteroid), prototypeOf(Spaceship))(rockShip),
+        guard(prototypeOf(Spaceship), prototypeOf(Asteroid))(shipRock));
+    testCrash(crash, rock, ship);
+  });
+});
