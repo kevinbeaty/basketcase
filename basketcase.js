@@ -77,19 +77,26 @@ function toFunction(fn){
  return f;
 }
 
-function unapply(value){
-  if(value && _.isFunction(value.unapply)){
-    return value.unapply.call(value, value);
+function unapply(){
+  var args = _.map(arguments, function(value){
+    if(value && _.isFunction(value.unapply)){
+      return value.unapply.call(value, value);
+    }
+    return [value];
+  });
+
+  if(args.length){
+    return _.flatten(args, true);
   }
-  return [value];
 }
 
 function applyUnapply(fn){
   fn = toFunction(fn);
   return function(value){
-    var unapplied = unapply(value);
+    var args = arguments,
+      unapplied = unapply.apply(null, args);
     if(!_.isUndefined(unapplied)){
-      return fn.apply(value, unapplied.concat(slice.call(arguments, 1)));
+      return fn.apply(value, unapplied.concat(slice.call(args, 1)));
     }
   };
 }

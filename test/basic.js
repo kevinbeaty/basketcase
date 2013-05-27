@@ -59,7 +59,7 @@ var pred = match.predicates,
     eq(fn(false), false);
     eq(fn(null), false);
     eq(fn('hi'), 'hi1');
-    eq(fn(), false);
+    eq(fn(NaN), false);
 
   });
 
