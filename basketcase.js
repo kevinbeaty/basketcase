@@ -30,7 +30,6 @@ function match() {
 }
 
 function imply(fn){
-  fn = applyUnapply(fn);
   return function(){
     var matched = match.apply(null, arguments);
     return function(value){
@@ -71,10 +70,15 @@ function predicateArgs(ps, args){
 }
 
 function toFunction(fn){
- var f = _.isFunction(fn) ? fn :
-    _.isUndefined(fn) ? applyUnapplyIdentity :
-    applyUnapplyConstantly(fn);
- return f;
+ return _.isFunction(fn) ? fn :
+    _.isUndefined(fn) ? _.identity :
+    constantly(fn);
+}
+
+function constantly(c){
+  return function(){
+    return c;
+  };
 }
 
 function applyUnapply(fn){
@@ -95,18 +99,5 @@ function unapply(){
     return [value];
   });
 
-  if(args.length){
-    return _.flatten(args, true);
-  }
-}
-
-var _applyUnapplyIdentity = applyUnapply(_.identity);
-function applyUnapplyIdentity(value){
-  return _applyUnapplyIdentity.apply(value, arguments);
-}
-
-function applyUnapplyConstantly(value){
-  return function(){
-    return applyUnapplyIdentity(value);
-  };
+  return _.flatten(args, true);
 }
