@@ -92,12 +92,14 @@ function applyUnapply(fn){
 }
 
 function unapply(){
-  var args = _.map(arguments, function(value){
+  var unapplied = false,
+    args = _.map(arguments, function(value){
     if(value && _.isFunction(value.unapply)){
+      unapplied = true;
       return value.unapply.call(value, value);
     }
     return [value];
   });
 
-  return _.flatten(args, true);
+  return unapplied ? _.flatten(args, true) : arguments;
 }
