@@ -1,6 +1,6 @@
 {
   "name": "basketcase",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JavaScript pattern matching",
   "main": "basketcase.js",
   "scripts": {
