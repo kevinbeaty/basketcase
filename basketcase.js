@@ -1,7 +1,7 @@
 'use strict';
 
 var _ = require('lodash'),
-    predicates = require('./lib/predicates'),
+    predicates = require('./predicates'),
     slice = Array.prototype.slice;
 
 module.exports = exports = match;
