@@ -48,10 +48,6 @@ function extractor(extract){
     };
   }
 
-  if(_.isFunction(extract)){
-    return extract;
-  }
-
   return method(extract)(_.identity);
 }
 
@@ -106,11 +102,19 @@ function createType(Data, name, argNames){
   F.prototype = new Data();
   F.prototype.constructor = F;
 
-  F.unapply = method(F)(function(){
+  F.unapply = method(F)(function(self){
     return _.map(argNames, function(arg){
-      return this[arg];
-    }, this);
+      return self[arg];
+    });
   });
+
+  F.prototype.unapply = function(other){
+    if(other instanceof F){
+      return method.apply(null, F.unapply(this))(function(){
+        return arguments;
+      }).apply(null, F.unapply(other));
+    }
+  };
 
   F.toString = function(){
     return name;
@@ -119,6 +123,4 @@ function createType(Data, name, argNames){
   F.prototype.toString = function(){
     return name+'('+F.unapply(this).join(', ')+')';
   };
-
-  return F;
 }

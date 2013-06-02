@@ -92,7 +92,7 @@ describe('caseclass List', function(){
   });
 });
 
-describe('caseclass Term obj', function(){
+describe('caseclass Term BinOp', function(){
   var Term = data(
     'Var(name)',
     'Const(value)',
@@ -109,7 +109,7 @@ describe('caseclass Term obj', function(){
       Mul = _.partial(BinOp, '*');
 
   var termString = match(
-      caseOf(Var, Const, guard(_.isNumber)())(),
+      caseOf(Var, Const)(),
       caseOf(Fun)(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
@@ -117,11 +117,10 @@ describe('caseclass Term obj', function(){
         return '('+termString(f)+' '+termString(v)+')';
       }),
       caseOf(BinOp)(match(
-        method('*', Term, 1)(pickA),
-        method('*', 1, Term)(pickB),
-        method('+', Term, 0)(pickA),
-        method('+', 0, Term)(pickB),
+        method('*', Term, Const(1))(pickA),
+        method('*', Const(1), Term)(pickB),
         method('+', Term, Const(0))(pickA),
+        method('+', Const(0), Term)(pickB),
         function(op, a, b){
           return '('+termString(a)+' '+op+' '+termString(b)+')';
         })));
@@ -165,22 +164,90 @@ describe('caseclass Term obj', function(){
   });
 
   it('should print 2*(c+3)', function(){
-    var t = Mul(2, Add(Var('c'), 3));
+    var t = Mul(Const(2), Add(Var('c'), Const(3)));
     eq(termString(t), '(2 * (c + 3))');
   });
 
   it('should simplify 1*(c+3)', function(){
-    var t = Mul(1, Add(Var('c'), Const(3)));
+    var t = Mul(Const(1), Add(Var('c'), Const(3)));
     eq(termString(t), '(c + 3)');
   });
 
   it('should simplify 1*(c+0)*1*3', function(){
-    var t = Mul(Mul(Mul(1, Add(Var('c'), Const(0))), 1), 3);
+    var t = Mul(Mul(Mul(Const(1), Add(Var('c'), Const(0))), Const(1)), Const(3));
     eq(termString(t), '(c * 3)');
   });
 
   it('should simplify 0+(c*1)+(a+0)', function(){
-    var t = Add(Add(0, Mul(Var('c'), 1)), Add(Var('a'), 0));
+    var t = Add(Add(Const(0), Mul(Var('c'), Const(1))), Add(Var('a'), Const(0)));
+    eq(termString(t), '(c + a)');
+  });
+});
+
+describe('caseclass Term Mul, Add', function(){
+  var Term = data(
+    'Var(name)',
+    'Const(value)',
+    'Mul(a, b)',
+    'Add(a, b)');
+
+  var Var = Term.Var,
+      Const = Term.Const,
+      Add = Term.Add,
+      Mul = Term.Mul;
+
+  var termString = match(
+      caseOf(Var, Const)(),
+      caseOf(Mul(Term, Const(1)), Add(Term, Const(0)))(function(a){
+        return termString(a);
+      }),
+      caseOf(Mul(Const(1), Term), Add(Const(0), Term))(function(a, b){
+        return termString(b);
+      }),
+      caseOf(Mul)(function(a, b){
+        return '('+termString(a)+' * '+termString(b)+')';
+      }),
+      caseOf(Add)(function(a, b){
+        return '('+termString(a)+' + '+termString(b)+')';
+      }));
+
+  it('should print a+b', function(){
+    var t = Add(Var('a'), Var('b'));
+    eq(termString(t), '(a + b)');
+  });
+
+  it('should print a*b', function(){
+    var t = Mul(Var('a'), Var('b'));
+    eq(termString(t), '(a * b)');
+  });
+
+  it('should print (a+b)*(c+d)', function(){
+    var t = Mul(Add(Var('a'), Var('b')), Add(Var('c'), Var('d')));
+    eq(termString(t), '((a + b) * (c + d))');
+  });
+
+  it('should print a+1', function(){
+    var t = Add(Var('a'), Const(1));
+    eq(termString(t), '(a + 1)');
+  });
+
+  it('should print 2*(c+3)', function(){
+    var t = Mul(Const(2), Add(Var('c'), Const(3)));
+    eq(termString(t), '(2 * (c + 3))');
+  });
+
+  it('should simplify 1*(c+3)', function(){
+    var t = Mul(Const(1), Add(Var('c'), Const(3)));
+    eq(termString(t), '(c + 3)');
+  });
+
+  it('should simplify 1*(c+0)*1*3', function(){
+    var t = Mul(Mul(Mul(Const(1), Add(Var('c'), Const(0))), Const(1)), Const(3));
+    eq(termString(t), '(c * 3)');
+  });
+
+  it('should simplify 0+(c*1)+(a+0)', function(){
+    var t = Add(Add(Const(0), Mul(Var('c'), Const(1))), Add(Var('a'), Const(0)));
     eq(termString(t), '(c + a)');
   });
 });
