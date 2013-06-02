@@ -56,6 +56,7 @@ function create(data, name, argNames){
   }
 
   F.prototype = data;
+  F.prototype.constructor = F;
 
   F.unapply = method(F)(function(){
     return _.map(argNames, function(arg){

@@ -16,8 +16,11 @@ _.extend(exports, {
 });
 
 function match() {
-  var fns = _.map(arguments, toFunction),
-      len = fns.length;
+  return _match(_.map(arguments, toFunction), true);
+}
+
+function _match(fns, exhaustError){
+  var len = fns.length;
   return function(value){
     var matched, fn, i = 0;
     for(; i<len; ++i){
@@ -26,7 +29,10 @@ function match() {
         return matched;
       }
     }
-    throw new TypeError('match non exhaustive for '+slice.call(arguments));
+
+    if(exhaustError){
+      throw new TypeError('match non exhaustive for '+slice.call(arguments));
+    }
   };
 }
 
@@ -39,14 +45,18 @@ function imply(fn){
   };
 }
 
-function caseOf(extract){
-  extract = extractor(extract);
+function caseOf(){
+  var extract = _match(_.map(arguments, extractor));
   return function(fn){
     fn = toFunction(fn);
     return function(value){
-      var args = extract(value);
-      if(args){
-        return fn.apply(null, args);
+      var args = extract.apply(value, arguments);
+      if(!_.isUndefined(args)){
+        if(_.isArray(args) || _.isArguments(args)){
+          return fn.apply(value, args);
+        } else {
+          return fn.call(value, args);
+        }
       }
     };
   };
@@ -100,6 +110,10 @@ function extractor(extract){
     return function(value){
       return extract.unapply(value);
     };
+  }
+
+  if(_.isFunction(extract)){
+    return extract;
   }
 
   return method(extract)(_.identity);

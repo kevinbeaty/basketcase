@@ -98,11 +98,13 @@ describe('caseclass List', function(){
 describe('caseclass Term obj', function(){
   var Term = data(
     'Var(name)',
+    'Const(value)',
     'Fun(arg, body)',
     'App(f, v)',
     'BinOp(op, a, b)');
 
   var Var = Term.Var,
+      Const = Term.Const,
       Fun = Term.Fun,
       App = Term.App,
       BinOp = Term.BinOp,
@@ -110,7 +112,7 @@ describe('caseclass Term obj', function(){
       Mul = _.partial(BinOp, '*');
 
   var termString = match(
-      caseOf(Var)(),
+      caseOf(Var, Const, guard(_.isNumber)())(),
       caseOf(Fun)(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
@@ -122,10 +124,10 @@ describe('caseclass Term obj', function(){
         method('*', 1, Term)(pickB),
         method('+', Term, 0)(pickA),
         method('+', 0, Term)(pickB),
+        method('+', Term, Const(0))(pickA),
         function(op, a, b){
           return '('+termString(a)+' '+op+' '+termString(b)+')';
-        })),
-      otherwise());
+        })));
 
   function pickA(op, a){return termString(a);}
   function pickB(op, a, b){return termString(b);}
@@ -161,7 +163,7 @@ describe('caseclass Term obj', function(){
   });
 
   it('should print a+1', function(){
-    var t = Add(Var('a'), 1);
+    var t = Add(Var('a'), Const(1));
     eq(termString(t), '(a + 1)');
   });
 
@@ -171,12 +173,12 @@ describe('caseclass Term obj', function(){
   });
 
   it('should simplify 1*(c+3)', function(){
-    var t = Mul(1, Add(Var('c'), 3));
+    var t = Mul(1, Add(Var('c'), Const(3)));
     eq(termString(t), '(c + 3)');
   });
 
   it('should simplify 1*(c+0)*1*3', function(){
-    var t = Mul(Mul(Mul(1, Add(Var('c'), 0)), 1), 3);
+    var t = Mul(Mul(Mul(1, Add(Var('c'), Const(0))), 1), 3);
     eq(termString(t), '(c * 3)');
   });
 
