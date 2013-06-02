@@ -2,13 +2,12 @@
 /*globals describe, it, match, eq*/
 
 describe('guard multi', function(){
-var pred = match.predicates,
-    guard = match.guard,
-    otherwise = match.otherwise,
+var guard = match.guard,
+    otherwise = guard.otherwise,
     _ = match._,
-    not = pred.not,
-    and = pred.and,
-    or = pred.or,
+    not = guard.not,
+    and = guard.and,
+    or = guard.or,
     add = function(a){return function(m){return m+a;};};
 
   it('should guard even/odd', function(){

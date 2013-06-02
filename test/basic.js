@@ -2,9 +2,8 @@
 /*globals describe, it, match, eq*/
 
 describe('primitives', function(){
-var pred = match.predicates,
-    guard = match.guard,
-    otherwise = match.otherwise,
+var guard = match.guard,
+    otherwise = guard.otherwise,
     _ = match._,
     add = function(a){return function(m){return m+a;};};
 
@@ -38,7 +37,7 @@ var pred = match.predicates,
   });
 
   it('should match truthy', function(){
-    var fn = match(guard(pred.truthy)(add(1)), false);
+    var fn = match(guard(guard.truthy)(add(1)), false);
 
     eq(fn(1), 2);
     eq(fn(true), 2);
@@ -51,7 +50,7 @@ var pred = match.predicates,
   });
 
   it('should match falsey', function(){
-    var fn = match(guard(pred.falsey)(false), add(1));
+    var fn = match(guard(guard.falsey)(false), add(1));
 
     eq(fn(1), 2);
     eq(fn(true), 2);
@@ -64,8 +63,8 @@ var pred = match.predicates,
   });
 
   it('should match or equal', function(){
-    var or = pred.or,
-        equal = pred.equal,
+    var or = guard.or,
+        equal = guard.equal,
         fn = match(
           guard(or(equal(1), equal(3)))(add(1)),
           guard(or(equal(2), equal(4)))(add(-1)),
@@ -82,9 +81,9 @@ var pred = match.predicates,
   });
 
   it('should match and not equal', function(){
-    var and = pred.and,
-        equal = pred.equal,
-        not = pred.not,
+    var and = guard.and,
+        equal = guard.equal,
+        not = guard.not,
         fn = match(
           guard(and(not(equal(1)), not(equal(3))))(add(1)),
           guard(and(not(equal(1)), not(equal(2, 4))))(add(-1)),
@@ -101,7 +100,7 @@ var pred = match.predicates,
   });
 
   it('should match equal', function(){
-    var equal = pred.equal,
+    var equal = guard.equal,
         fn = match(
           guard(equal(1, 3))(add(1)),
           guard(equal(2, 4))(add(-1)),
@@ -118,8 +117,8 @@ var pred = match.predicates,
   });
 
   it('should match not(equal)', function(){
-    var not = pred.not,
-        equal = pred.equal,
+    var not = guard.not,
+        equal = guard.equal,
         fn = match(
           guard(not(equal(1, 3)))(add(1)),
           guard(not(equal(1, 2, 4)))(add(-1)),
@@ -136,7 +135,7 @@ var pred = match.predicates,
   });
 
   it('should match where', function(){
-    var where = pred.where,
+    var where = guard.where,
       appendName = function(val){
         return function(person){
           return _.defaults({name: person.name + val}, person);
@@ -158,7 +157,7 @@ var pred = match.predicates,
     eq(fn({name:'wilma', age:30}), {name: 'wilma', age:30});
   });
 
-  it('should match _ predicates', function(){
+  it('should match _ guard', function(){
     var O = function(){this.x=10;},
         fn = match(
           guard(_.isFunction)('function'),
@@ -196,7 +195,7 @@ var pred = match.predicates,
   });
 
   it('should recurse on factorial', function(){
-    var equal = pred.equal,
+    var equal = guard.equal,
         fn = match(
           guard(equal(1, 0))(1),
           function(x){return x*fn(x-1);});
@@ -205,7 +204,7 @@ var pred = match.predicates,
   });
 
   it('should recurse on fibonacci', function(){
-    var equal = pred.equal,
+    var equal = guard.equal,
         fn = match(
           guard(equal(0, 1))(),
           function(x){return fn(x-1) + fn(x-2);});

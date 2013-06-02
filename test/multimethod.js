@@ -2,10 +2,9 @@
 /*globals describe, it, before, match, eq*/
 var method = match.method,
     guard = match.guard,
-    pred = match.predicates,
-    instanceOf = pred.instanceOf,
-    prototypeOf = pred.prototypeOf,
-    isA = pred.isA,
+    instanceOf = guard.instanceOf,
+    prototypeOf = guard.prototypeOf,
+    isA = guard.isA,
     _ = match._,
     create = Object.create || function(o){
       function F(){}

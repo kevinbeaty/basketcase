@@ -7,4 +7,4 @@
 ./test/multimethod.js
 ./test/caseof.js
 ./test/unapply.js
-./test/caseclass.js
+./test/data.js

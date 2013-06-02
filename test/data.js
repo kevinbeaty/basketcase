@@ -1,14 +1,11 @@
 'use strict';
 /*globals describe, it, match, eq*/
-var data = require('../caseclass'),
-    imply = match.imply,
+var imply = match.imply,
     caseOf = match.caseOf,
+    data = caseOf.data,
     method = match.method,
     guard = match.guard,
-    pred = match.predicates,
-    isA = pred.isA,
-    otherwise = match.otherwise,
-    where = pred.where,
+    isA = guard.isA,
     _ = match._;
 
 describe('caseclass List', function(){

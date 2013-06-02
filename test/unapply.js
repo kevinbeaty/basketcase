@@ -4,9 +4,7 @@ var imply = match.imply,
     method = match.method,
     caseOf = match.caseOf,
     guard = match.guard,
-    pred = match.predicates,
-    otherwise = match.otherwise,
-    where = pred.where,
+    otherwise = guard.otherwise,
     _ = match._;
 
 describe('unapply List', function(){

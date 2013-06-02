@@ -3,8 +3,7 @@
 /*globals describe, it, match, eq*/
 var caseOf = match.caseOf,
     guard = match.guard,
-    pred = match.predicates,
-    where = pred.where,
+    where = guard.where,
     _ = match._,
     add = function(a){return function(m){return m+a;};};
 
@@ -61,8 +60,8 @@ describe('caseOf extracts', function(){
   });
 
   it('should match caseOf guard equal', function(){
-    var or = pred.or,
-        equal = pred.equal,
+    var or = guard.or,
+        equal = guard.equal,
         fn = match(
           caseOf(guard(equal(1))(), guard(equal(3))())(add(1)),
           caseOf(guard(equal(2))(), guard(equal(4))())(add(-1)),
