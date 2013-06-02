@@ -1,8 +1,7 @@
 'use strict';
 
 var _ = require('lodash'),
-    predicates = require('./predicates'),
-    slice = Array.prototype.slice;
+    predicates = require('./predicates');
 
 module.exports = exports = match;
 _.extend(exports, {
@@ -31,7 +30,7 @@ function _match(fns, exhaustError){
     }
 
     if(exhaustError){
-      throw new TypeError('match non exhaustive for '+slice.call(arguments));
+      throw new TypeError('match non exhaustive for '+_.toArray(arguments));
     }
   };
 }
@@ -109,6 +108,15 @@ function extractor(extract){
   if(extract && _.isFunction(extract.unapply)){
     return function(value){
       return extract.unapply(value);
+    };
+  }
+
+  if(_.isRegExp(extract)){
+    return function(value){
+      var matched = extract.exec(value);
+      if(matched){
+        return _.rest(matched);
+      }
     };
   }
 
