@@ -23,7 +23,7 @@ node_modules:
 
 js: $(JS_TARGET) $(JS_TARGET:.js=.min.js) $(JS_TARGET:.js=.min.js.gz)
 
-$(JS_TARGET): $(PROJECT).js | build
+$(JS_TARGET): $(PROJECT) | build
 	`npm bin`/browserify $< > $@
 
 build:
