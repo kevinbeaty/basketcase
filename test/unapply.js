@@ -2,6 +2,7 @@
 /*globals describe, it, match, eq*/
 var imply = match.imply,
     method = match.method,
+    caseOf = match.caseOf,
     guard = match.guard,
     pred = match.predicates,
     otherwise = match.otherwise,
@@ -9,25 +10,24 @@ var imply = match.imply,
     _ = match._;
 
 describe('unapply List', function(){
-  var Empty = function(){};
-  Empty.singleton = new Empty();
+  var Empty = {};
 
   var NonEmpty = function(head, tail){
     this.head = head;
     this.tail = tail;
   };
-  NonEmpty.prototype.unapply = function(){
+  NonEmpty.unapply = method(NonEmpty)(function(){
     return [this.head, this.tail];
-  };
+  });
 
   function List(arr){
-    return (arr && arr.length) ? new NonEmpty(arr[0], arr.slice(1)) : Empty.singleton;
+    return (arr && arr.length) ? new NonEmpty(arr[0], arr.slice(1)) : Empty;
   }
 
   it('should unapply imply(List)(head, tail) NonEmpty, 0', function(){
     var fn =
       imply(List)(
-        method(NonEmpty)(function(head, tail){
+        caseOf(NonEmpty)(function(head, tail){
           return head + fn(tail);
         }), 0);
 
@@ -37,19 +37,8 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) Empty, NonEmpty', function(){
     var fn =
       imply(List)(
-        method(Empty)(0),
-        method(NonEmpty)(function(head, tail){
-          return head + fn(tail);
-        }));
-
-    eq(fn([1,2,3,4,5]), 15);
-  });
-
-  it('should unapply imply(List)(head, tail) Empty, always', function(){
-    var fn =
-      imply(List)(
-        method(Empty)(0),
-        otherwise(function(head, tail){
+        caseOf(Empty)(0),
+        caseOf(NonEmpty)(function(head, tail){
           return head + fn(tail);
         }));
 
@@ -57,88 +46,82 @@ describe('unapply List', function(){
   });
 });
 
-describe('unapply Term obj', function(){
+describe('unapply Term', function(){
+  var Term = function(){};
+
   var Var = function(name){
     if(!(this instanceof Var)) return new Var(name);
     this.name = name;
   };
-  Var.prototype.unapply = function(){
+  Var.prototype = new Term();
+  Var.unapply = method(Var)(function(){
     return [this.name];
-  };
+  });
 
   var Fun = function(arg, body){
     if(!(this instanceof Fun)) return new Fun(arg, body);
     this.arg = arg;
     this.body = body;
   };
-  Fun.prototype.unapply = function(){
+  Fun.prototype = new Term();
+  Fun.unapply = method(Fun)(function(){
     return [this.arg, this.body];
-  };
+  });
 
   var App = function(f, v){
     if(!(this instanceof App)) return new App(f, v);
     this.f = f;
     this.v = v;
   };
-  App.prototype.unapply = function(){
+  App.prototype = new Term();
+  App.unapply = method(App)(function(){
     return [this.f, this.v];
-  };
+  });
 
   var BinOp = function(op, a, b){
     this.op = op;
     this.a = a;
     this.b = b;
   };
-  BinOp.prototype.unapply = function(){
+  BinOp.prototype = new Term();
+  BinOp.unapply = method(BinOp)(function(){
     return [this.op, this.a, this.b];
-  };
+  });
 
   var Mul = function(a, b){
     if(!(this instanceof Mul)) return new Mul(a, b);
     BinOp.call(this, '*', a, b);
   };
   Mul.prototype = new BinOp();
+  Mul.unapply = BinOp.unapply;
 
   var Add = function(a, b){
     if(!(this instanceof Add)) return new Add(a, b);
     BinOp.call(this, '+', a, b);
   };
   Add.prototype = new BinOp();
-
-  function pickA(op, a){return a;}
-  function pickB(op, a, b){return b;}
-  var simplifyA = simplifySkip(1); // skip op
-  var simplifyB = simplifySkip(2); // skip op plus unary a
-  function simplifySkip(n){
-    return function(){
-      var args = _.drop(arguments, n);
-      return simplify.apply(null, args);
-    };
-  }
-
-  var simplify = match(
-      method('*', 1, BinOp)(simplifyB),
-      method('*', BinOp, 1)(simplifyA),
-      method('*', Var, 1)(pickA),
-      method('*', 1, Var)(pickB),
-      method('+', 0, BinOp)(simplifyB),
-      method('+', BinOp, 0)(simplifyA),
-      method('+', Var, 0)(pickA),
-      method('+', 0, Var)(pickB),
-      function(op, a, b){
-        return '('+termString(a)+' '+op+' '+termString(b)+')';
-      });
+  Add.unapply = BinOp.unapply;
 
   var termString = match(
-      method(Var)(),
-      method(Fun)(function(x, b){
+      caseOf(Var)(),
+      caseOf(Fun)(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
-      method(App)(function(f, v){
+      caseOf(App)(function(f, v){
         return '('+termString(f)+' '+termString(v)+')';
       }),
-      method(BinOp)(simplify),
+      caseOf(BinOp)(match(
+        method('*', Term, 1)(pickA),
+        method('*', 1, Term)(pickB),
+        method('+', Term, 0)(pickA),
+        method('+', 0, Term)(pickB),
+        function(op, a, b){
+          return '('+termString(a)+' '+op+' '+termString(b)+')';
+        })),
       otherwise());
+
+  function pickA(op, a){return termString(a);}
+  function pickB(op, a, b){return termString(b);}
 
   it('should print id = ^x.x', function(){
     var id = Fun('x', Var('x'));
@@ -196,91 +179,21 @@ describe('unapply Term obj', function(){
   });
 });
 
-describe('unapply Term func', function(){
-  var Var = _.identity;
-
-  var Fun = function(arg, body){
-    return {
-      type: 'Fun',
-      arg: arg,
-      body:body,
-      unapply: function(fun){
-        return [fun.arg, fun.body];
-      }
-    };
-  };
-
-  var App = function(f, v){
-    return {
-      type: 'App',
-      values:[f, v],
-      unapply: function(){
-        return this.values;
-      }
-    };
-  };
-
-  var termString = match(
-      guard(where({type:'Fun'}))(function(x, b){
-        return '^'+x+'.'+termString(b);
-      }),
-      guard(where({type:'App'}))(function(f, v){
-        return '('+termString(f)+' '+termString(v)+')';
-      }),
-      otherwise());
-
-  it('should print id = ^x.x', function(){
-    var id = Fun('x', Var('x'));
-    eq(termString(id), '^x.x');
-  });
-
-  it('should print t = ^x.^y.(x y)', function(){
-    var t = Fun('x', Fun('y', App(Var('x'), Var('y'))));
-    eq(termString(t), '^x.^y.(x y)');
-  });
-});
-
-
 describe('unapply DivBy2 obj', function(){
   var DivBy2 = function(x){
     if(!(this instanceof DivBy2)) return new DivBy2(x);
     this.x = x;
   };
-  DivBy2.prototype.unapply = function(){
+  DivBy2.unapply = method(DivBy2)(function(){
     if(this.x % 2 === 0){
       return [this.x/2];
     }
-  };
+  });
 
-  it('should unapply DivBy2 instanceOf, 0', function(){
-    var divBy2 = imply(DivBy2)(method(DivBy2)(), 0);
+  it('should unapply DivBy2 caseOf, 0', function(){
+    var divBy2 = imply(DivBy2)(caseOf(DivBy2)(), 0);
     eq(divBy2(2), 1);
     eq(divBy2(4), 2);
     eq(divBy2(-5), 0);
-  });
-
-  it('should unapply DivBy2 always, false', function(){
-    var divBy2 = imply(DivBy2)(otherwise(), false);
-    eq(divBy2(2), 1);
-    eq(divBy2(4), 2);
-    eq(divBy2(-5), false);
-  });
-});
-
-describe('unapply DivBy2 func', function(){
-  var DivBy2 = function(x){ return x/2; };
-
-  it('should unapply DivBy2 identity', function(){
-    var divBy2 = imply(DivBy2)(otherwise());
-    eq(divBy2(2), 1);
-    eq(divBy2(4), 2);
-    eq(divBy2(-5), -2.5);
-  });
-
-  it('should unapply DivBy2 always', function(){
-    var divBy2 = imply(DivBy2)(otherwise());
-    eq(divBy2(2), 1);
-    eq(divBy2(4), 2);
-    eq(divBy2(-5), -2.5);
   });
 });

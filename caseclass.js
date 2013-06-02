@@ -1,5 +1,7 @@
 'use strict';
-var _ = require('lodash'),
+var match = require('./basketcase'),
+    method = match.method,
+    _ = require('lodash'),
     // KISS, trust user to validate type names
     matchAlt = /\|/,
     matchType = /\s*([^\s\(]+)/,
@@ -19,9 +21,12 @@ module.exports = function(){
 
   fn = fn || _.identity;
 
-  var data = function(){
-    return fn.apply(data, arguments);
-  };
+  var data = Data;
+  function Data(){
+    if(!(this instanceof Data)){
+      return fn.apply(data, arguments);
+    }
+  }
 
   _.each(typeDefs, function(typeDef){
     var name = matchType.exec(typeDef),
@@ -33,13 +38,13 @@ module.exports = function(){
       throw new TypeError('Cannot extract type for '+typeDef);
     }
 
-    data[name] = create(name, args);
+    data[name] = create(new Data(), name, args);
   });
 
   return data;
 };
 
-function create(name, argNames){
+function create(data, name, argNames){
   function F(args){
     if(!(this instanceof F)){
       return new F(arguments);
@@ -50,18 +55,20 @@ function create(name, argNames){
     }, this);
   }
 
-  F.prototype.unapply = function(){
+  F.prototype = data;
+
+  F.unapply = method(F)(function(){
     return _.map(argNames, function(arg){
       return this[arg];
     }, this);
-  };
+  });
 
   F.toString = function(){
     return name;
   };
 
   F.prototype.toString = function(){
-    return name+'('+this.unapply().join(', ')+')';
+    return name+'('+F.unapply(this).join(', ')+')';
   };
 
   return F;

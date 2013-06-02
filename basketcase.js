@@ -9,6 +9,7 @@ _.extend(exports, {
   _:_,
   predicates:predicates,
   imply:imply,
+  caseOf:caseOf,
   guard:guard,
   method:method,
   otherwise:guard(predicates.always)
@@ -38,10 +39,23 @@ function imply(fn){
   };
 }
 
+function caseOf(extract){
+  extract = extractor(extract);
+  return function(fn){
+    fn = toFunction(fn);
+    return function(value){
+      var args = extract(value);
+      if(args){
+        return fn.apply(null, args);
+      }
+    };
+  };
+}
+
 function guard(){
   var ps = arguments;
   return function(fn){
-    fn = applyUnapply(fn);
+    fn = toFunction(fn);
     return function(value){
       var args = arguments;
       if(predicateArgs(ps, args)){
@@ -81,25 +95,12 @@ function constantly(c){
   };
 }
 
-function applyUnapply(fn){
-  fn = toFunction(fn);
-  return function(value){
-    var unapplied = unapply.apply(null, arguments);
-    if(!_.isUndefined(unapplied)){
-      return fn.apply(value, unapplied);
-    }
-  };
-}
+function extractor(extract){
+  if(extract && _.isFunction(extract.unapply)){
+    return function(value){
+      return extract.unapply(value);
+    };
+  }
 
-function unapply(){
-  var unapplied = false,
-    args = _.map(arguments, function(value){
-    if(value && _.isFunction(value.unapply)){
-      unapplied = true;
-      return value.unapply.call(value, value);
-    }
-    return [value];
-  });
-
-  return unapplied ? _.flatten(args, true) : arguments;
+  return method(extract)(_.identity);
 }

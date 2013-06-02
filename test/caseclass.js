@@ -2,14 +2,16 @@
 /*globals describe, it, match, eq*/
 var data = require('../caseclass'),
     imply = match.imply,
+    caseOf = match.caseOf,
     method = match.method,
     guard = match.guard,
     pred = match.predicates,
+    isA = pred.isA,
     otherwise = match.otherwise,
     where = pred.where,
     _ = match._;
 
-describe('unapply List', function(){
+describe('caseclass List', function(){
   var List = data(
         'Empty | NonEmpty(head, tail)',
         function(arr){
@@ -28,7 +30,7 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) NonEmpty, 0', function(){
     var fn =
       imply(List)(
-        method(List.NonEmpty)(function(head, tail){
+        caseOf(List.NonEmpty)(function(head, tail){
           return head + fn(tail);
         }), 0);
 
@@ -38,27 +40,62 @@ describe('unapply List', function(){
   it('should unapply imply(List)(head, tail) Empty, NonEmpty', function(){
     var fn =
       imply(List)(
-        method(List.Empty)(0),
-        method(List.NonEmpty)(function(head, tail){
+        caseOf(List.Empty)(0),
+        caseOf(List.NonEmpty)(function(head, tail){
           return head + fn(tail);
         }));
 
     eq(fn([1,2,3,4,5]), 15);
   });
 
-  it('should unapply imply(List)(head, tail) Empty, always', function(){
+  it('should unapply imply(List) method(list.head, list.tail) NonEmpty, 0', function(){
     var fn =
       imply(List)(
-        method(List.Empty)(0),
-        otherwise(function(head, tail){
-          return head + fn(tail);
-        }));
+        method(List.NonEmpty)(function(list){
+          return list.head + fn(list.tail);
+        }), 0);
 
     eq(fn([1,2,3,4,5]), 15);
+  });
+
+  it('should unapply NonEmpty(head, tail) method(list.head, list.tail)', function(){
+    var fn = match(
+        method(List.NonEmpty)(function(l){
+          return l.head + fn(List(l.tail));
+        }), 0),
+        list = List.NonEmpty(1, [2, 3, 4, 5]);
+
+    eq(List(), List.Empty);
+    eq(List([1]), List.NonEmpty(1, []));
+    eq(List([1, 2, 3, 4, 5]), list);
+    eq(list.head, 1);
+    eq(list.tail, [2, 3, 4, 5]);
+
+    eq(isA(List)(List.Empty()), true);
+    eq(isA(List.Empty)(List.Empty()), true);
+    eq(isA(List.NonEmpty)(List.Empty()), false);
+
+    eq(isA(List)(List.NonEmpty([1,2])), true);
+    eq(isA(List.NonEmpty)(List.NonEmpty([1,2])), true);
+    eq(isA(List.Empty)(List.NonEmpty([1,2])), false);
+
+    eq(isA(List)(list), true);
+    eq(isA(List.NonEmpty)(list), true);
+    eq(isA(List.Empty)(list), false);
+    eq(fn(list), 15);
+
+    list.head = 2;
+    eq(fn(list), 16);
+
+    list.tail = [];
+    eq(fn(list), 2);
+
+    list.tail = [5, 4];
+    eq(fn(list), 11);
   });
 });
 
-describe('unapply Term obj', function(){
+describe('caseclass Term obj', function(){
   var Term = data(
     'Var(name)',
     'Fun(arg, body)',
@@ -69,48 +106,29 @@ describe('unapply Term obj', function(){
       Fun = Term.Fun,
       App = Term.App,
       BinOp = Term.BinOp,
-      Add = makeBinOp('+'),
-      Mul = makeBinOp('*');
-
-  function makeBinOp(op){
-    return function(a, b){
-      return BinOp(op, a, b);
-    };
-  }
-  function pickA(op, a){return a;}
-  function pickB(op, a, b){return b;}
-  var simplifyA = simplifySkip(1); // skip op
-  var simplifyB = simplifySkip(2); // skip op plus unary a
-  function simplifySkip(n){
-    return function(){
-      var args = _.drop(arguments, n);
-      return simplify.apply(null, args);
-    };
-  }
-
-  var simplify = match(
-      method('*', 1, BinOp)(simplifyB),
-      method('*', BinOp, 1)(simplifyA),
-      method('*', Var, 1)(pickA),
-      method('*', 1, Var)(pickB),
-      method('+', 0, BinOp)(simplifyB),
-      method('+', BinOp, 0)(simplifyA),
-      method('+', Var, 0)(pickA),
-      method('+', 0, Var)(pickB),
-      function(op, a, b){
-        return '('+termString(a)+' '+op+' '+termString(b)+')';
-      });
+      Add = _.partial(BinOp, '+'),
+      Mul = _.partial(BinOp, '*');
 
   var termString = match(
-      method(Var)(),
-      method(Fun)(function(x, b){
+      caseOf(Var)(),
+      caseOf(Fun)(function(x, b){
         return '^'+x+'.'+termString(b);
       }),
-      method(App)(function(f, v){
+      caseOf(App)(function(f, v){
         return '('+termString(f)+' '+termString(v)+')';
       }),
-      method(BinOp)(simplify),
+      caseOf(BinOp)(match(
+        method('*', Term, 1)(pickA),
+        method('*', 1, Term)(pickB),
+        method('+', Term, 0)(pickA),
+        method('+', 0, Term)(pickB),
+        function(op, a, b){
+          return '('+termString(a)+' '+op+' '+termString(b)+')';
+        })),
       otherwise());
+
+  function pickA(op, a){return termString(a);}
+  function pickB(op, a, b){return termString(b);}
 
   it('should print id = ^x.x', function(){
     var id = Fun('x', Var('x'));
