@@ -109,10 +109,12 @@ function createType(Data, name, argNames){
   });
 
   F.prototype.unapply = function(other){
+    var unThis, unOther, methodOther;
     if(other instanceof F){
-      return method.apply(null, F.unapply(this))(function(){
-        return arguments;
-      }).apply(null, F.unapply(other));
+      unThis = F.unapply(this);
+      unOther = F.unapply(other);
+      methodOther = method.apply(null, unThis)(unOther);
+      return methodOther.apply(null, unOther);
     }
   };
 
