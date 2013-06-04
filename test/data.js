@@ -9,76 +9,77 @@ var imply = match.imply,
     _ = match._;
 
 describe('caseclass List', function(){
-  var List = data(
-        'Empty | NonEmpty(head, tail)',
-        function(arr){
-            return (arr && arr.length) ?
-              this.NonEmpty(arr[0], arr.slice(1)) :
-              this.Empty;
-        });
+  var List = data('Empty | NonEmpty(head, tail)'),
+      Empty = List.Empty,
+      NonEmpty = List.NonEmpty,
+      toList = function(arr){
+        return arr.length ? List(arr[0], arr.slice(1)) : List();
+      };
 
   it('should have List toString', function(){
-    eq(List.Empty.toString(), 'Empty');
-    eq(List.Empty().toString(), 'Empty()');
-    eq(List.NonEmpty.toString(), 'NonEmpty');
-    eq(List.NonEmpty(1, [2, 3]).toString(), 'NonEmpty(1, 2,3)');
+    eq(Empty.toString(), 'Empty');
+    eq(Empty().toString(), 'Empty()');
+    eq(NonEmpty.toString(), 'NonEmpty');
+    eq(NonEmpty(1, [2, 3]).toString(), 'NonEmpty(1, 2,3)');
+    eq(List().toString(), 'Empty()');
+    eq(List(1, [2, 3]).toString(), 'NonEmpty(1, 2,3)');
   });
 
-  it('should unapply imply(List)(head, tail) NonEmpty, 0', function(){
-    var fn =
-      imply(List)(
-        caseOf(List.NonEmpty)(function(head, tail){
-          return head + fn(tail);
-        }), 0);
-
-    eq(fn([1,2,3,4,5]), 15);
-  });
-
-  it('should unapply imply(List)(head, tail) Empty, NonEmpty', function(){
-    var fn =
-      imply(List)(
-        caseOf(List.Empty)(0),
-        caseOf(List.NonEmpty)(function(head, tail){
+  it('should unapply imply toList (head, tail)', function(){
+    var fn = imply(toList)(
+        caseOf(Empty)(0),
+        caseOf(NonEmpty)(function(head, tail){
           return head + fn(tail);
         }));
 
     eq(fn([1,2,3,4,5]), 15);
   });
 
-  it('should unapply imply(List) method(list.head, list.tail) NonEmpty, 0', function(){
+  it('should unapply match (head, tail) List', function(){
+    var fn = match(
+        caseOf(Empty)(0),
+        caseOf(NonEmpty)(function(head, tail){
+          return head + fn(toList(tail));
+        }));
+
+    eq(fn(List(1, [2,3,4,5])), 15);
+  });
+
+  it('should unapply imply(List)(head, tail) NonEmpty, 0', function(){
     var fn =
       imply(List)(
-        method(List.NonEmpty)(function(list){
-          return list.head + fn(list.tail);
+        caseOf(List.NonEmpty)(function(head, tail){
+          return head + (tail.length ? fn(tail[0], tail.slice(1)) : fn());
         }), 0);
 
-    eq(fn([1,2,3,4,5]), 15);
+    eq(fn(1, [2,3,4,5]), 15);
   });
 
   it('should unapply NonEmpty(head, tail) method(list.head, list.tail)', function(){
     var fn = match(
-        method(List.NonEmpty)(function(l){
-          return l.head + fn(List(l.tail));
+        method(NonEmpty)(function(l){
+          return l.head + fn(toList(l.tail));
         }), 0),
-        list = List.NonEmpty(1, [2, 3, 4, 5]);
+        list = NonEmpty(1, [2, 3, 4, 5]);
 
-    eq(List(), List.Empty);
-    eq(List([1]), List.NonEmpty(1, []));
-    eq(List([1, 2, 3, 4, 5]), list);
+    eq(List(), List.Empty());
+    eq(List(1, []), NonEmpty(1, []));
+    eq(List(1, [2, 3, 4, 5]), list);
     eq(list.head, 1);
     eq(list.tail, [2, 3, 4, 5]);
 
-    eq(isA(List)(List.Empty()), true);
-    eq(isA(List.Empty)(List.Empty()), true);
-    eq(isA(List.NonEmpty)(List.Empty()), false);
+    eq(isA(List)(Empty()), true);
+    eq(isA(Empty)(Empty()), true);
+    eq(isA(NonEmpty)(Empty()), false);
 
-    eq(isA(List)(List.NonEmpty([1,2])), true);
-    eq(isA(List.NonEmpty)(List.NonEmpty([1,2])), true);
-    eq(isA(List.Empty)(List.NonEmpty([1,2])), false);
+    eq(isA(List)(NonEmpty(1,[2])), true);
+    eq(isA(NonEmpty)(NonEmpty(1,[2])), true);
+    eq(isA(Empty)(NonEmpty(1,[2])), false);
 
     eq(isA(List)(list), true);
-    eq(isA(List.NonEmpty)(list), true);
-    eq(isA(List.Empty)(list), false);
+    eq(isA(NonEmpty)(list), true);
+    eq(isA(Empty)(list), false);
+
     eq(fn(list), 15);
 
     list.head = 2;
