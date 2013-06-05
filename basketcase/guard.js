@@ -71,7 +71,15 @@ function isA(){
 function _isA(obj, val){
   return obj === val ||
     (_.isFunction(obj) && _instanceOf(obj, val)) ||
-    _prototypeOf(obj, val) ||
+    (obj && _prototypeOf(obj, val)) ||
+    (obj === Array && _.isArray(val)) ||
+    (obj === Boolean && _.isBoolean(val)) ||
+    (obj === Date && _.isDate(val)) ||
+    (obj === Function && _.isFunction(val)) ||
+    (obj === Number && _.isNumber(val)) ||
+    (obj === Object && _.isObject(val)) ||
+    (obj === RegExp && _.isRegExp(val)) ||
+    (obj === String && _.isString(val)) ||
     _.isEqual(obj, val);
 }
 

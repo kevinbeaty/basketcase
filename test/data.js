@@ -35,6 +35,19 @@ describe('caseclass List', function(){
     eq(fn([1,2,3,4,5]), 15);
   });
 
+  it('should convert toList fallthrough', function(){
+    var fn = match(
+        caseOf(Empty)(0),
+        caseOf(NonEmpty)(function(head, tail){
+          return head + fn(tail);
+        }),
+        function(arr){
+          return fn(toList(arr));
+        });
+
+    eq(fn([1,2,3,4,5]), 15);
+  });
+
   it('should unapply match (head, tail) List', function(){
     var fn = match(
         caseOf(Empty)(0),
