@@ -199,24 +199,39 @@ describe('caseclass Term BinOp', function(){
 });
 
 describe('caseclass Term Mul, Add', function(){
-  var Term = data(
-    'Var(name)',
-    'Const(value)',
-    'Mul(a, b)',
-    'Add(a, b)');
+  var Exp = data('Var(name) | Mul(a, b) | Add(a, b) | Div(a, b)'),
+      Var = Exp.Var,
+      Add = Exp.Add,
+      Div = Exp.Div,
+      Mul = Exp.Mul;
 
-  var Var = Term.Var,
-      Const = Term.Const,
-      Add = Term.Add,
-      Mul = Term.Mul;
-
-  var termString = match(
-      caseOf(Var, Const)(),
-      caseOf(Mul(Term, Const(1)), Add(Term, Const(0)))(function(a){
-        return termString(a);
+  var simplify = match(
+      caseOf(Mul(Exp, 1), Add(Exp, 0), Div(Exp, 1))(function(a){
+        return simplify(a);
       }),
-      caseOf(Mul(Const(1), Term), Add(Const(0), Term))(function(a, b){
-        return termString(b);
+      caseOf(Mul(1, Exp), Add(0, Exp))(function(a, b){
+        return simplify(b);
+      }),
+      caseOf(Add(Number, Number))(function(a, b){
+        return a+b;
+      }),
+      caseOf(Mul(Number, Number))(function(a, b){
+        return a*b;
+      }),
+      caseOf(Add(Mul, Mul))(function(a, b){
+        if(_.isEqual(a.a, b.a)){
+          return simplify(Mul(a.a, simplify(Add(a.b, b.b))));
+        }
+        if(_.isEqual(a.b, b.b)){
+          return simplify(Mul(a.b, simplify(Add(a.a, b.a))));
+        }
+      }),
+      _.identity);
+
+  var termString = imply(simplify)(
+      caseOf(Var, Number)(),
+      caseOf(Div)(function(a, b){
+        return '('+termString(a)+' / '+termString(b)+')';
       }),
       caseOf(Mul)(function(a, b){
         return '('+termString(a)+' * '+termString(b)+')';
@@ -235,33 +250,58 @@ describe('caseclass Term Mul, Add', function(){
     eq(termString(t), '(a * b)');
   });
 
+  it('should print a/b', function(){
+    var t = Div(Var('a'), Var('b'));
+    eq(termString(t), '(a / b)');
+  });
+
   it('should print (a+b)*(c+d)', function(){
     var t = Mul(Add(Var('a'), Var('b')), Add(Var('c'), Var('d')));
     eq(termString(t), '((a + b) * (c + d))');
   });
 
   it('should print a+1', function(){
-    var t = Add(Var('a'), Const(1));
+    var t = Add(Var('a'), 1);
     eq(termString(t), '(a + 1)');
   });
 
   it('should print 2*(c+3)', function(){
-    var t = Mul(Const(2), Add(Var('c'), Const(3)));
+    var t = Mul(2, Add(Var('c'), 3));
     eq(termString(t), '(2 * (c + 3))');
   });
 
   it('should simplify 1*(c+3)', function(){
-    var t = Mul(Const(1), Add(Var('c'), Const(3)));
+    var t = Mul(1, Add(Var('c'), 3));
     eq(termString(t), '(c + 3)');
   });
 
-  it('should simplify 1*(c+0)*1*3', function(){
-    var t = Mul(Mul(Mul(Const(1), Add(Var('c'), Const(0))), Const(1)), Const(3));
-    eq(termString(t), '(c * 3)');
+  it('should simplify 1*(c+3)', function(){
+    var t = Mul(1, Add(Var('c'), 3));
+    eq(termString(t), '(c + 3)');
   });
 
-  it('should simplify 0+(c*1)+(a+0)', function(){
-    var t = Add(Add(Const(0), Mul(Var('c'), Const(1))), Add(Var('a'), Const(0)));
+  it('should not simplify (a*b)+(d*c)', function(){
+    var t = Add(Mul(Var('a'), Var('b')), Mul(Var('d'), Var('c')));
+    eq(termString(t), '((a * b) + (d * c))');
+  });
+
+  it('should simplify (a*b)+(a*c)', function(){
+    var t = Add(Mul(Var('a'), Var('b')), Mul(Var('a'), Var('c')));
+    eq(termString(t), '(a * (b + c))');
+  });
+
+  it('should simplify (2*c)+(3*c)', function(){
+    var t = Add(Mul(2, Var('c')), Mul(3, Var('c')));
+    eq(termString(t), '(c * 5)');
+  });
+
+  it('should calculate (2*4)+(3*4)', function(){
+    var t = Add(Mul(2, 4), Mul(3, 4));
+    eq(termString(t), 20);
+  });
+
+  it('should simplify 0+(c*1)+(a+0)/1', function(){
+    var t = Add(Add(0, Mul(Var('c'), 1)), Div(Add(Var('a'), 0), 1));
     eq(termString(t), '(c + a)');
   });
 });
