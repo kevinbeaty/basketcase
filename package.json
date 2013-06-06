@@ -1,7 +1,7 @@
 {
   "name": "basketcase",
-  "version": "0.0.2",
-  "description": "JavaScript pattern matching and multi methods",
+  "version": "0.0.3",
+  "description": "JavaScript algebraic data types, pattern matching and multi methods",
   "main": "basketcase",
   "scripts": {
     "test": "mocha"
@@ -23,7 +23,10 @@
     "defmulti",
     "defmethod",
     "dispatch",
-    "overload"
+    "overload",
+    "adt",
+    "functional",
+    "algebraic data type"
   ],
   "author": "Kevin Beaty",
   "license": "MIT",

@@ -2,9 +2,6 @@
 'use strict';
 /*globals describe, it, match, eq*/
 var caseOf = match.caseOf,
-    guard = match.guard,
-    where = guard.where,
-    _ = match._,
     add = function(a){return function(m){return m+a;};};
 
 describe('caseOf regexp extracts', function(){
